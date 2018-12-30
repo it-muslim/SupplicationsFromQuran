@@ -1,0 +1,35 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="jmapps.supplicationsfromquran.MainActivity">
+    <item
+        android:id="@+id/action_night_mode"
+        android:checkable="true"
+        android:orderInCategory="1"
+        android:title="@string/action_night_mode"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="2"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_languages"
+        android:orderInCategory="3"
+        android:title="@string/select_language"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_share_link"
+        android:orderInCategory="4"
+        android:title="@string/action_share_link"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_exit"
+        android:orderInCategory="5"
+        android:title="@string/action_exit"
+        app:showAsAction="never" />
+</menu>

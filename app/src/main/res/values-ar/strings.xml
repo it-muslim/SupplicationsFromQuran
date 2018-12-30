@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">أدعية من القرآن</string>
+    <string name="data_base_name">SFQ_ar</string>
+    <string name="action_night_mode">الوضع الليلي</string>
+    <string name="action_settings">إعدادات</string>
+    <string name="action_share_link">مشاركة</string>
+    <string name="action_exit">خروج</string>
+    <string name="text_size">حجم الخط</string>
+    <string name="indent_size">مسافات بادئة من النص</string>
+    <string name="text_color_arabic">لون النص العربي</string>
+    <string name="text_color_translation" />
+    <string name="share_to">مشاركة عنر:</string>
+    <string name="about_us" />
+    <string name="play_list">فهرس</string>
+    <string name="copied_to_clipboard">نسخ إلى الحافظة</string>
+    <string name="action_about_us" />
+    <string name="select_language">اختار اللغة</string>
+    <string-array name="language_arrays">
+        <item>العربية</item>
+        <item>الإنجليزية</item>
+        <item>الروسية</item>
+    </string-array>
+    <string name="default_lang">ar</string>
+</resources>
