@@ -19,14 +19,14 @@
             android:layout_width="35dp"
             android:layout_height="35dp"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_play_circle" />
+            android:src="@drawable/rotate_play_circle" />
 
         <ImageView
             android:id="@+id/iv_play_playlist_accent"
             android:layout_width="35dp"
             android:layout_height="35dp"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_play_circle_accent"
+            android:src="@drawable/rotate_play_circle_accent"
             android:visibility="gone" />
 
         <TextView
