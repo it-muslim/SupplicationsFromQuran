@@ -15,10 +15,5 @@
     <string name="copied_to_clipboard">نسخ إلى الحافظة</string>
     <string name="action_about_us" />
     <string name="select_language">اختار اللغة</string>
-    <string-array name="language_arrays">
-        <item>العربية</item>
-        <item>الإنجليزية</item>
-        <item>الروسية</item>
-    </string-array>
     <string name="default_lang">ar</string>
 </resources>

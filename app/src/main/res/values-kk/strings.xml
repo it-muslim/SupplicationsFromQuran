@@ -24,11 +24,5 @@
         на почту: jmappsmuslim@gmail.com, или в Telegram: t.me/JMbikk
 
     </string>
-
-    <string-array name="language_arrays">
-        <item>Арабский</item>
-        <item>Английский</item>
-        <item>Русский</item>
-    </string-array>
     <string name="default_lang">ru</string>
 </resources>

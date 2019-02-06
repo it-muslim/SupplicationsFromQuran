@@ -16,9 +16,9 @@
     <string name="action_about_us" />
     <string name="select_language">Select language</string>
     <string-array name="language_arrays">
-        <item>Arabic</item>
+        <item>العربية</item>
         <item>English</item>
-        <item>Russian</item>
+        <item>Русский</item>
     </string-array>
     <string name="default_lang">en</string>
 </resources>
