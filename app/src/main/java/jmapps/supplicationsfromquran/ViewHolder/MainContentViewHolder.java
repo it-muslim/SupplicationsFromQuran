@@ -9,6 +9,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.util.List;
+
+import jmapps.supplicationsfromquran.Adapter.MainContentAdapter;
+import jmapps.supplicationsfromquran.Model.MainContentModel;
 import jmapps.supplicationsfromquran.R;
 
 public class MainContentViewHolder extends RecyclerView.ViewHolder implements
@@ -41,6 +45,11 @@ public class MainContentViewHolder extends RecyclerView.ViewHolder implements
         sizeText();
         textColorArabic();
         textColorTranslation();
+    }
+
+    public void findItemClick(final MainContentAdapter.OnItemAdapterClickListener onItemAdapterClickListener,
+                              final MainContentViewHolder holder, final List<MainContentModel> model, final int position) {
+        onItemAdapterClickListener.itemAdapterClickListener(holder, model, position);
     }
 
     @Override

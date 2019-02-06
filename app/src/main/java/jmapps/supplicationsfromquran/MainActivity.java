@@ -1,12 +1,17 @@
 package jmapps.supplicationsfromquran;
 
 import android.annotation.SuppressLint;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
@@ -15,6 +20,7 @@ import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -24,10 +30,12 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import jmapps.supplicationsfromquran.Adapter.MainContentAdapter;
 import jmapps.supplicationsfromquran.Adapter.PlayListContentAdapter;
@@ -40,12 +48,13 @@ import jmapps.supplicationsfromquran.Model.PlayListContentModel;
 import jmapps.supplicationsfromquran.Player.MainContract;
 import jmapps.supplicationsfromquran.Player.MainPresenterImpl;
 import jmapps.supplicationsfromquran.Player.MyPlayer;
+import jmapps.supplicationsfromquran.ViewHolder.MainContentViewHolder;
 
 import static jmapps.supplicationsfromquran.MainApplication.keyNightMode;
 
 public class MainActivity extends AppCompatActivity implements
-        CompoundButton.OnCheckedChangeListener, View.OnClickListener,
-        MainContract.MainView {
+        CompoundButton.OnCheckedChangeListener, View.OnClickListener, MainContract.MainView,
+        MainContentAdapter.OnItemAdapterClickListener {
 
     private SharedPreferences mPreferences;
     private SharedPreferences.Editor mEditor;
@@ -64,6 +73,9 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        DBAssetHelper dbAssetHelper = new DBAssetHelper(this);
+        sqLiteDatabase = dbAssetHelper.getReadableDatabase();
+
         mPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         mEditor = mPreferences.edit();
 
@@ -75,9 +87,6 @@ public class MainActivity extends AppCompatActivity implements
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        DBAssetHelper dbAssetHelper = new DBAssetHelper(this);
-        sqLiteDatabase = dbAssetHelper.getReadableDatabase();
 
         RecyclerView rvMainList = findViewById(R.id.rv_main_list);
         Button btnPreviousTrack = findViewById(R.id.btn_previous_track);
@@ -93,13 +102,12 @@ public class MainActivity extends AppCompatActivity implements
         SQLiteOpenHelperMainList sqLiteOpenHelperMainList = new SQLiteOpenHelperMainList(this);
         List<MainContentModel> mainContentModelList = sqLiteOpenHelperMainList.getMainListContent();
 
-        mainContentAdapter = new MainContentAdapter(mainContentModelList, this);
+        mainContentAdapter = new MainContentAdapter(mainContentModelList, this, this);
         rvMainList.setAdapter(mainContentAdapter);
 
         mainPresenter = new MainPresenterImpl(this);
         int currentIndex = 1;
-        myPlayer = new MyPlayer(
-                this, tbPlayPause, sbAudioProgress, rvMainList, mainContentAdapter, currentIndex);
+        myPlayer = new MyPlayer(this, tbPlayPause, sbAudioProgress, rvMainList, mainContentAdapter, currentIndex);
 
         btnPreviousTrack.setOnClickListener(this);
         tbPlayPause.setOnCheckedChangeListener(this);
@@ -196,23 +204,34 @@ public class MainActivity extends AppCompatActivity implements
         myPlayer.setLoop(isChecked);
     }
 
-    private void getPlayListBottomSheet() {
-        View view = View.inflate(this, R.layout.bottom_sheet_play_list, null);
-        RecyclerView rvPlayList = view.findViewById(R.id.rv_play_list);
+    @Override
+    public void itemAdapterClickListener(MainContentViewHolder holder, List<MainContentModel> model, final int position) {
 
-        SQLiteOpenHelperMainList liteOpenHelperMainList = new SQLiteOpenHelperMainList(this);
-        List<PlayListContentModel> playListContentModel = liteOpenHelperMainList.getPlayListContent();
+        final String strListLength = position + 1 + "/" + String.valueOf(model.size());
+        final String strAyahArabic = model.get(position).getStrAyahArabic();
+        final String strAyahTranslation = model.get(position).getStrAyahTranslation();
 
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
-        rvPlayList.setLayoutManager(linearLayoutManager);
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playOnly(position);
+            }
+        });
 
-        playListContentAdapter = new PlayListContentAdapter(this, playListContentModel);
-        rvPlayList.setAdapter(playListContentAdapter);
-        rvPlayList.setHasFixedSize(true);
+        holder.btnCopyContent.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+            @Override
+            public void onClick(View v) {
+                eventContentCopy(strListLength, strAyahArabic, strAyahTranslation);
+            }
+        });
 
-        BottomSheetDialog dialogPlayList = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
-        dialogPlayList.setContentView(view);
-        dialogPlayList.show();
+        holder.btnShareContent.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                eventContentShare(strListLength, strAyahArabic, strAyahTranslation);
+            }
+        });
     }
 
     public void playOnly(int position) {
@@ -252,6 +271,25 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    private void getPlayListBottomSheet() {
+        View view = View.inflate(this, R.layout.bottom_sheet_play_list, null);
+        RecyclerView rvPlayList = view.findViewById(R.id.rv_play_list);
+
+        SQLiteOpenHelperMainList liteOpenHelperMainList = new SQLiteOpenHelperMainList(this);
+        List<PlayListContentModel> playListContentModel = liteOpenHelperMainList.getPlayListContent();
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        rvPlayList.setLayoutManager(linearLayoutManager);
+
+        playListContentAdapter = new PlayListContentAdapter(this, playListContentModel);
+        rvPlayList.setAdapter(playListContentAdapter);
+        rvPlayList.setHasFixedSize(true);
+
+        BottomSheetDialog dialogPlayList = new BottomSheetDialog(this, R.style.BottomSheetDialogTheme);
+        dialogPlayList.setContentView(view);
+        dialogPlayList.show();
+    }
+
     private void checkedNightModeState() {
         if (MainApplication.getInstance().isNightModeEnabled()) {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
@@ -259,7 +297,6 @@ public class MainActivity extends AppCompatActivity implements
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         }
     }
-
 
     private void dialogWithSelectLang() {
         new AlertDialog.Builder(this)
@@ -287,6 +324,42 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 })
                 .show();
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void eventContentCopy(String strContentLength, String strAyahContent, String strTranslateContent) {
+
+        if (strTranslateContent == null) {
+            strAyahContent = "";
+        }
+
+        ClipboardManager clipboard = (ClipboardManager)
+                Objects.requireNonNull(getSystemService(Context.CLIPBOARD_SERVICE));
+
+        ClipData clip = ClipData.newPlainText("",
+                Html.fromHtml(strContentLength + "<p/>" + strAyahContent + "<p/>" + strTranslateContent));
+
+        clipboard.setPrimaryClip(clip);
+
+        Toast.makeText(this, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show();
+    }
+
+    private void eventContentShare(String strContentLength, String strAyahContent, String strTranslateContent) {
+
+        if (strTranslateContent == null) {
+            strAyahContent = "";
+        }
+
+        Intent shareText = new Intent(Intent.ACTION_SEND);
+        shareText.setType("text/plain");
+        shareText.putExtra(Intent.EXTRA_TEXT,
+                Html.fromHtml(strContentLength + "<p/>" + strAyahContent + "<p/>" + strTranslateContent +
+                        "<p/>" + "____________" + "<p/>" +
+                        "https://play.google.com/store/apps/details?id=jmapps.supplicationsfromquran"));
+        shareText.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        shareText = Intent.createChooser(shareText, getString(R.string.share_to));
+        startActivity(shareText);
     }
 
     private void changeLanguage(String strLanguage) {
