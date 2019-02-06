@@ -52,9 +52,9 @@ public class MainApplication extends Application {
             mEditor.putInt("key_g_arabic", 233);
             mEditor.putInt("key_b_arabic", 33);
 
-            mEditor.putInt("key_r_translation", 255);
-            mEditor.putInt("key_g_translation", 255);
-            mEditor.putInt("key_b_translation", 255);
+            mEditor.putInt("key_r_translation", 200);
+            mEditor.putInt("key_g_translation", 200);
+            mEditor.putInt("key_b_translation", 200);
 
             mEditor.putInt("key_progress_arabic", 1513).apply();
             mEditor.putInt("key_progress_translation", 1791).apply();

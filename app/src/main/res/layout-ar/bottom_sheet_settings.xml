@@ -10,7 +10,7 @@
         android:id="@+id/tv_settings"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/colorPrimaryDark"
+        android:background="@color/colorPrimary"
         android:drawableStart="@drawable/ic_settings"
         android:drawableLeft="@drawable/ic_settings"
         android:drawablePadding="8dp"
