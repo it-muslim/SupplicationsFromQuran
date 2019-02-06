@@ -5,6 +5,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import jmapps.supplicationsfromquran.Adapter.PlayListContentAdapter;
 import jmapps.supplicationsfromquran.R;
 
 public class PlayListContentViewHolder extends RecyclerView.ViewHolder {
@@ -19,5 +20,15 @@ public class PlayListContentViewHolder extends RecyclerView.ViewHolder {
         tbPlayPlayList = itemView.findViewById(R.id.iv_play_playlist);
         tbPlayPlayListAccent = itemView.findViewById(R.id.iv_play_playlist_accent);
         tvAyahNumber = itemView.findViewById(R.id.tv_ayah_number);
+    }
+
+    public void bindClick(final PlayListContentAdapter.OnItemAdapterClickListener onItemAdapterClickListener,
+                          final int position) {
+        itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onItemAdapterClickListener.onItemAdapterClick(position);
+            }
+        });
     }
 }

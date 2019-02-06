@@ -22,6 +22,7 @@ public class MainContentViewHolder extends RecyclerView.ViewHolder implements
     public final TextView tvAyahArabic;
     public final TextView tvAyahTranslation;
     public final View viewColorLine;
+    public final View viewMainLine;
     public final TextView tvListLength;
     public final Button btnCopyContent;
     public final Button btnShareContent;
@@ -34,9 +35,10 @@ public class MainContentViewHolder extends RecyclerView.ViewHolder implements
         PreferenceManager.getDefaultSharedPreferences(mainContent.getContext())
                 .registerOnSharedPreferenceChangeListener(this);
 
-        viewColorLine = mainContent.findViewById(R.id.view_color_line);
         tvAyahArabic = mainContent.findViewById(R.id.tv_ayah_arabic);
         tvAyahTranslation = mainContent.findViewById(R.id.tv_ayah_translation);
+        viewColorLine = mainContent.findViewById(R.id.view_color_line);
+        viewMainLine = mainContent.findViewById(R.id.view_main_line);
         tvListLength = mainContent.findViewById(R.id.tv_list_length);
         btnCopyContent = mainContent.findViewById(R.id.btn_copy_content);
         btnShareContent = mainContent.findViewById(R.id.btn_share_content);

@@ -45,28 +45,37 @@ import jmapps.supplicationsfromquran.Fragment.ListAppsBottomSheet;
 import jmapps.supplicationsfromquran.Fragment.SettingsBottomSheet;
 import jmapps.supplicationsfromquran.Model.MainContentModel;
 import jmapps.supplicationsfromquran.Model.PlayListContentModel;
+import jmapps.supplicationsfromquran.Player.GetTrackIteratorImpl;
 import jmapps.supplicationsfromquran.Player.MainContract;
 import jmapps.supplicationsfromquran.Player.MainPresenterImpl;
-import jmapps.supplicationsfromquran.Player.MyPlayer;
 import jmapps.supplicationsfromquran.ViewHolder.MainContentViewHolder;
 
 import static jmapps.supplicationsfromquran.MainApplication.keyNightMode;
 
 public class MainActivity extends AppCompatActivity implements
-        CompoundButton.OnCheckedChangeListener, View.OnClickListener, MainContract.MainView,
-        MainContentAdapter.OnItemAdapterClickListener {
+        CompoundButton.OnCheckedChangeListener, View.OnClickListener,
+        MainContentAdapter.OnItemAdapterClickListener, MainContract.MainView,
+        PlayListContentAdapter.OnItemAdapterClickListener {
 
     private SharedPreferences mPreferences;
     private SharedPreferences.Editor mEditor;
     private SQLiteDatabase sqLiteDatabase;
 
-    private PlayListContentAdapter playListContentAdapter;
-    private MainPresenterImpl mainPresenter;
-    private MyPlayer myPlayer;
-    private MainContentAdapter mainContentAdapter;
     private MenuItem itemNightMode;
+
+    private MainPresenterImpl mainPresenter;
+
+    private RecyclerView rvMainList;
+    private List<MainContentModel> mainContentModelList;
+    private MainContentAdapter mainContentAdapter;
+    private RecyclerView rvPlayList;
+    private PlayListContentAdapter playListContentAdapter;
+
     private ToggleButton tbPlayPause;
     private SeekBar sbAudioProgress;
+    private ToggleButton tbIsLoop;
+
+    private int currentIndex;
 
     @SuppressLint("CommitPrefEdits")
     @Override
@@ -88,26 +97,25 @@ public class MainActivity extends AppCompatActivity implements
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        RecyclerView rvMainList = findViewById(R.id.rv_main_list);
+        rvMainList = findViewById(R.id.rv_main_list);
         Button btnPreviousTrack = findViewById(R.id.btn_previous_track);
         tbPlayPause = findViewById(R.id.tb_play_pause);
         Button btnNextTrack = findViewById(R.id.btn_next_track);
         sbAudioProgress = findViewById(R.id.sb_audio_progress);
-        ToggleButton tbIsLoop = findViewById(R.id.tb_loop);
+        tbIsLoop = findViewById(R.id.tb_loop);
         Button btnPlayList = findViewById(R.id.btn_play_list);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         rvMainList.setLayoutManager(linearLayoutManager);
 
         SQLiteOpenHelperMainList sqLiteOpenHelperMainList = new SQLiteOpenHelperMainList(this);
-        List<MainContentModel> mainContentModelList = sqLiteOpenHelperMainList.getMainListContent();
+        mainContentModelList = sqLiteOpenHelperMainList.getMainListContent();
 
         mainContentAdapter = new MainContentAdapter(mainContentModelList, this, this);
         rvMainList.setAdapter(mainContentAdapter);
 
-        mainPresenter = new MainPresenterImpl(this);
-        int currentIndex = 1;
-        myPlayer = new MyPlayer(this, tbPlayPause, sbAudioProgress, rvMainList, mainContentAdapter, currentIndex);
+        mainPresenter = new MainPresenterImpl(this, this,
+                new GetTrackIteratorImpl(mainContentModelList, mainContentAdapter, rvMainList), sbAudioProgress);
 
         btnPreviousTrack.setOnClickListener(this);
         tbPlayPause.setOnCheckedChangeListener(this);
@@ -160,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements
                 shareAppLink();
                 break;
             case R.id.action_exit:
-                myPlayer.clearMediaPlayer();
+                mainPresenter.destroy();
                 finish();
                 break;
         }
@@ -171,10 +179,10 @@ public class MainActivity extends AppCompatActivity implements
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         switch (buttonView.getId()) {
             case R.id.tb_play_pause:
-                mainPresenter.play(isChecked);
+                mainPresenter.playTrackChecked(isChecked);
                 break;
             case R.id.tb_loop:
-                mainPresenter.loop(isChecked);
+                mainPresenter.loopTrack(isChecked);
                 break;
         }
     }
@@ -183,10 +191,16 @@ public class MainActivity extends AppCompatActivity implements
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_previous_track:
-                myPlayer.previousTrack();
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    mainPresenter.playTrack(currentIndex);
+                }
                 break;
             case R.id.btn_next_track:
-                myPlayer.nextTrack();
+                if (currentIndex < mainContentModelList.size() - 1) {
+                    currentIndex++;
+                    mainPresenter.playTrack(currentIndex);
+                }
                 break;
             case R.id.btn_play_list:
                 getPlayListBottomSheet();
@@ -195,13 +209,34 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void playState(boolean isChecked) {
-        myPlayer.setPlay(isChecked);
+    public void setPlayState(boolean isChecked) {
+        tbPlayPause.setChecked(isChecked);
     }
 
     @Override
-    public void loopState(boolean isChecked) {
-        myPlayer.setLoop(isChecked);
+    public void setLoopState(boolean isChecked) {
+        tbIsLoop.setChecked(isChecked);
+    }
+
+    @Override
+    public void setOnCompletion(boolean isChecked) {
+        if (currentIndex < mainContentModelList.size() - 1) {
+            currentIndex++;
+            mainPresenter.playTrack(currentIndex);
+            if (playListContentAdapter != null) {
+                playListContentAdapter.setColorPlaying(currentIndex);
+                rvPlayList.smoothScrollToPosition(currentIndex);
+            }
+        } else {
+            sbAudioProgress.setProgress(0);
+            tbPlayPause.setChecked(false);
+            mainContentAdapter.setLinePlaying(-1);
+            rvMainList.smoothScrollToPosition(0);
+            if (playListContentAdapter != null) {
+                playListContentAdapter.setColorPlaying(-1);
+                rvPlayList.smoothScrollToPosition(0);
+            }
+        }
     }
 
     @Override
@@ -214,7 +249,7 @@ public class MainActivity extends AppCompatActivity implements
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                playOnly(position);
+                mainPresenter.playTrack(currentIndex = position);
             }
         });
 
@@ -234,37 +269,36 @@ public class MainActivity extends AppCompatActivity implements
         });
     }
 
-    public void playOnly(int position) {
-        myPlayer.playOnly(position);
-        tbPlayPause.setChecked(true);
-        if (playListContentAdapter != null) {
-            playListContentAdapter.setColorPlaying(position - 1);
-        }
+
+    @Override
+    public void onItemAdapterClick(int position) {
+        mainPresenter.playTrack(currentIndex = position);
+        playListContentAdapter.setColorPlaying(currentIndex = position);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        myPlayer.clearMediaPlayer();
+        mainPresenter.destroy();
         sqLiteDatabase.close();
     }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        myPlayer.clearMediaPlayer();
+        mainPresenter.destroy();
     }
 
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        myPlayer.clearMediaPlayer();
+        mainPresenter.destroy();
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         if (savedInstanceState != null) {
-            myPlayer.clearMediaPlayer();
+            mainPresenter.clearPlayer();
             sbAudioProgress.setProgress(0);
             mainContentAdapter.setLinePlaying(-1);
             tbPlayPause.setChecked(false);
@@ -273,7 +307,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void getPlayListBottomSheet() {
         View view = View.inflate(this, R.layout.bottom_sheet_play_list, null);
-        RecyclerView rvPlayList = view.findViewById(R.id.rv_play_list);
+        rvPlayList = view.findViewById(R.id.rv_play_list);
 
         SQLiteOpenHelperMainList liteOpenHelperMainList = new SQLiteOpenHelperMainList(this);
         List<PlayListContentModel> playListContentModel = liteOpenHelperMainList.getPlayListContent();
@@ -281,7 +315,9 @@ public class MainActivity extends AppCompatActivity implements
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         rvPlayList.setLayoutManager(linearLayoutManager);
 
-        playListContentAdapter = new PlayListContentAdapter(this, playListContentModel);
+        playListContentAdapter = new PlayListContentAdapter(playListContentModel, this);
+        playListContentAdapter.setColorPlaying(currentIndex);
+        rvPlayList.smoothScrollToPosition(currentIndex);
         rvPlayList.setAdapter(playListContentAdapter);
         rvPlayList.setHasFixedSize(true);
 
@@ -377,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements
         startActivity(recreate);
         finish();
         overridePendingTransition(0, 0);
-        myPlayer.clearMediaPlayer();
+        mainPresenter.destroy();
     }
 
     private void nightModeState(boolean state) {

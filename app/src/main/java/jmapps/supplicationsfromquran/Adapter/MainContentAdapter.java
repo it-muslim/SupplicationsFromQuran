@@ -63,6 +63,7 @@ public class MainContentAdapter extends RecyclerView.Adapter<MainContentViewHold
 
         holder.tvListLength.setText(strListLength);
         holder.viewColorLine.setVisibility((position == currentIndex) ? View.VISIBLE : View.INVISIBLE);
+        holder.viewMainLine.setVisibility((position == currentIndex) ? View.INVISIBLE : View.VISIBLE);
         // Привязка интерфейса
         holder.findItemClick(mOnItemAdapterClickListener, holder, mMainContentModel, position);
     }

@@ -9,21 +9,24 @@ import android.view.ViewGroup;
 
 import java.util.List;
 
-import jmapps.supplicationsfromquran.MainActivity;
 import jmapps.supplicationsfromquran.Model.PlayListContentModel;
 import jmapps.supplicationsfromquran.R;
 import jmapps.supplicationsfromquran.ViewHolder.PlayListContentViewHolder;
 
 public class PlayListContentAdapter extends RecyclerView.Adapter<PlayListContentViewHolder> {
 
-    private final MainActivity mMainActivity;
     private List<PlayListContentModel> mPlayListContentModel;
+    private OnItemAdapterClickListener onItemAdapterClickListener;
     private int currentIndex = -1;
 
-    public PlayListContentAdapter(MainActivity mainActivity,
-                                  List<PlayListContentModel> playListContentModels) {
-        this.mMainActivity = mainActivity;
+    public interface OnItemAdapterClickListener {
+        void onItemAdapterClick(int position);
+    }
+
+    public PlayListContentAdapter(List<PlayListContentModel> playListContentModels,
+                                  OnItemAdapterClickListener onItemAdapterClickListener) {
         this.mPlayListContentModel = playListContentModels;
+        this.onItemAdapterClickListener = onItemAdapterClickListener;
     }
 
     @NonNull
@@ -39,16 +42,9 @@ public class PlayListContentAdapter extends RecyclerView.Adapter<PlayListContent
                                  @SuppressLint("RecyclerView") final int position) {
         final String strDuaName = mPlayListContentModel.get(position).getStrPlayListItem();
         holder.tvAyahNumber.setText(strDuaName);
-
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mMainActivity.playOnly(position + 1);
-            }
-        });
-
         holder.tbPlayPlayList.setVisibility((position != currentIndex) ? View.VISIBLE : View.GONE);
         holder.tbPlayPlayListAccent.setVisibility((position == currentIndex) ? View.VISIBLE : View.GONE);
+        holder.bindClick(onItemAdapterClickListener, position);
     }
 
     @Override
